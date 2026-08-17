@@ -1,13 +1,12 @@
 import { DoctorClient } from '@/components/doctor/DoctorClient';
 import { pageMetadata } from '@/lib/pageMetadata';
 import { publicRoute } from '@/lib/publicRoutes';
-import { getLocale } from '@/lib/i18n.server';
 
 const route = publicRoute('/doctor');
 export const metadata = pageMetadata(route);
 
 export default async function Page() {
-  const locale = await getLocale();
+  const locale = 'zh' as const;
   return (
     <article className="feature-page shell">
       <header className="feature-page__header">

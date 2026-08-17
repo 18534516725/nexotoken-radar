@@ -1,7 +1,8 @@
 import { ProviderDirectory } from '@/components/provider/ProviderDirectory';
 import { publicRoute } from '@/lib/publicRoutes';
 import { catalogAvailable, listProviders, type ProviderSummary } from '@/lib/db/providers';
-import { copy, getLocale } from '@/lib/i18n';
+import { copy } from '@/lib/i18n';
+import { getLocale } from '@/lib/i18n.server';
 import type { Metadata } from 'next';
 const route = publicRoute('/providers');
 

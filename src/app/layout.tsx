@@ -4,7 +4,7 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { PRODUCT } from '@/lib/product';
 import './globals.css';
-import { getLocale } from '@/lib/i18n';
+import { getLocale } from '@/lib/i18n.server';
 
 const sans = Sora({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const serif = Newsreader({ subsets: ['latin'], variable: '--font-serif', display: 'swap' });

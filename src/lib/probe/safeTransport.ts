@@ -27,7 +27,6 @@ async function readPreview(response: Response, signal: AbortSignal): Promise<str
       if (done) break;
       bytes += value.byteLength;
       preview += decoder.decode(value.slice(0, Math.max(0, MAX_RESPONSE_BYTES - (bytes - value.byteLength))), { stream: true });
-      if (preview.includes('\n\n') && response.headers.get('content-type')?.includes('text/event-stream')) break;
     }
   } finally {
     await reader.cancel().catch(() => undefined);

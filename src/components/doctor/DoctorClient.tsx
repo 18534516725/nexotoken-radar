@@ -9,6 +9,13 @@ type ApiState = { status: 'idle' | 'running' } | { status: 'success'; result: Di
 export function DoctorClient({ locale }: { locale: Locale }) {
   const t = copy[locale].doctor;
   const [state, setState] = useState<ApiState>({ status: 'idle' });
+  const checkLabels: Record<string, string> = { connectivity: '连通性与模型访问', streaming: '流式完整性', tool_calling: '工具调用', error_hygiene: '错误信息安全', usage_integrity: '用量诚实性', parameter_honoring: '参数遵从', latency_stability: '延迟稳定性', multi_turn: '多轮对话', structured_output: '结构化输出', event_sequence: '事件序列', reasoning_compatibility: '推理能力兼容', anthropic_events: 'Anthropic 事件', anthropic_cache: '提示缓存', logprobs: 'Logprobs 数据' };
+  const outcomeLabels: Record<string, string> = { pass: '通过', warn: '警告', fail: '失败' };
+  const messageLabels: Record<string, string> = {
+    'The request succeeded but no structured tool call was observed.': '请求成功，但没有检测到结构化工具调用。',
+    'The endpoint accepted the bounded model request.': '端点接受了受限模型请求。',
+    'Authentication or model permission was rejected.': '身份验证失败，或当前密钥没有该模型的调用权限。',
+  };
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,14 +73,14 @@ export function DoctorClient({ locale }: { locale: Locale }) {
       </form>
 
       <section className="doctor-results" aria-live="polite">
-        <div className="doctor-results__head"><span>{t.output}</span><span>{state.status === 'success' ? `${state.result.overall.replace('_', ' ').toUpperCase()} · ${state.result.score ?? 0}/100` : t.waiting}</span></div>
+        <div className="doctor-results__head"><span>{t.output}</span><span>{state.status === 'success' ? `${state.result.overall === 'compatible' ? '兼容' : state.result.overall === 'partially_compatible' ? '部分兼容' : '不兼容'} · ${state.result.score ?? 0}/100 · 覆盖率 ${state.result.coverage ?? 0}%` : t.waiting}</span></div>
         {state.status === 'idle' && <div className="doctor-results__empty"><span className="scope-mini" /><h2>{t.ready}</h2><p>{t.readyDesc}</p></div>}
         {state.status === 'running' && <div className="doctor-results__empty"><span className="scope-mini scope-mini--running" /><h2>{t.testing}</h2><p>{t.testingDesc}</p></div>}
         {state.status === 'error' && <div className="doctor-results__error"><span>{t.stopped}</span><h2>{state.message}</h2><p>{t.stoppedDesc}</p></div>}
         {state.status === 'success' && <div className="doctor-results__checks">
           {state.result.checks.map((check, index) => <article key={check.id}>
-            <span className={`check-state check-state--${check.outcome}`}>{check.outcome}</span>
-            <div><small>0{index + 1}</small><h2>{check.label}</h2><p>{check.message}</p></div>
+            <span className={`check-state check-state--${check.outcome}`}>{outcomeLabels[check.outcome] || check.outcome}</span>
+            <div><small>0{index + 1}</small><h2>{checkLabels[check.id] || check.label}</h2><p>{messageLabels[check.message] || check.message}</p></div>
             <dl><div><dt>TTFB</dt><dd>{check.firstByteMs ?? '—'} ms</dd></div><div><dt>Total</dt><dd>{check.totalMs ?? '—'} ms</dd></div></dl>
           </article>)}
         </div>}

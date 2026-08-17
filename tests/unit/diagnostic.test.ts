@@ -62,4 +62,30 @@ describe('private API diagnostic', () => {
     expect(result.checks.length).toBeGreaterThan(3);
     expect(result.coverage).toBeGreaterThan(0);
   });
+
+  it('does not mark a successful stream as passed without a complete event sequence', async () => {
+    const transport: ProbeTransport = vi.fn(async (request) => ({
+      status: 200,
+      headers: { 'content-type': request.body.stream ? 'text/event-stream' : 'application/json' },
+      firstByteMs: 10,
+      totalMs: 20,
+      bodyPreview: request.kind === 'streaming' ? 'data: {"delta":"OK"}\n\n' : '{"status":"completed"}',
+    }));
+    const result = await runDiagnostic(input, transport);
+    expect(result.checks.find((check) => check.id === 'streaming')?.outcome).toBe('warn');
+  });
+
+  it('requires an actual structured tool call with the probe function and JSON arguments', async () => {
+    const transport: ProbeTransport = vi.fn(async (request) => ({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      firstByteMs: 10,
+      totalMs: 20,
+      bodyPreview: request.kind === 'tool_call'
+        ? '{"type":"function_call","name":"other","arguments":"not-json"}'
+        : '{"status":"completed"}',
+    }));
+    const result = await runDiagnostic(input, transport);
+    expect(result.checks.find((check) => check.id === 'tool_calling')?.outcome).toBe('warn');
+  });
 });

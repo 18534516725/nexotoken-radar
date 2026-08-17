@@ -1,0 +1,4 @@
+import { NextResponse } from 'next/server';
+import { listRanking } from '@/lib/db/providers'; import { rankingMetric } from '@/lib/catalog/query';
+export const dynamic = 'force-dynamic';
+export async function GET(_: Request, { params }: { params: Promise<{ kind: string }> }) { const { kind } = await params; try { const metric=rankingMetric(kind); const data=await listRanking(kind); return NextResponse.json({ data, meta: { metric: metric.label, windowDays: 30, minimumObservations: 20, methodology: '1.0', generatedAt: new Date().toISOString() } }, { headers: { 'Cache-Control': 'public, s-maxage=300' } }); } catch (error) { if(error instanceof Error && error.message==='UNKNOWN_RANKING') return NextResponse.json({error:{code:'NOT_FOUND',message:'Unknown ranking.'}},{status:404}); return NextResponse.json({error:{code:'RANKING_UNAVAILABLE',message:'The ranking is temporarily unavailable.'}},{status:503}); } }

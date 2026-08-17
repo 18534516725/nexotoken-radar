@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS radar_daily_provider_stats;
+DROP TABLE IF EXISTS radar_probe_results;
+DROP TABLE IF EXISTS radar_probe_runs;
+DROP TABLE IF EXISTS radar_probe_jobs;
+DROP TABLE IF EXISTS radar_probe_schedules;
+DROP TABLE IF EXISTS radar_price_snapshots;
+DROP TABLE IF EXISTS radar_provider_models;
+DROP TABLE IF EXISTS radar_models;
+DROP TABLE IF EXISTS radar_providers;

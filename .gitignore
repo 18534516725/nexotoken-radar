@@ -8,4 +8,5 @@ test-results/
 .env.production
 *.log
 *.tsbuildinfo
+*-preview.png
 .DS_Store

@@ -15,4 +15,10 @@ describe('isolated production package', () => {
     expect(env).toContain('RADAR_DB_PASSWORD=change-me');
     expect(env).not.toMatch(/BEGIN (RSA |EC )?PRIVATE KEY/);
   });
+
+  it('repairs the pnpm standalone SWC helper trace', () => {
+    const dockerfile = readFileSync('Dockerfile', 'utf8');
+    expect(dockerfile).toContain('standalone/node_modules/.pnpm');
+    expect(dockerfile).toContain('@swc/helpers');
+  });
 });

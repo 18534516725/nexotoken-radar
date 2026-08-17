@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { publicProbeError } from './redaction';
+import { normalizeEndpoint } from './endpoint';
+import { createProbePlan, type DiagnosticMode } from './plan';
+import { scoreDiagnostic } from '@/lib/benchmark/score';
 
 export const diagnosticInputSchema = z.object({
   baseUrl: z.url().max(2048),
@@ -8,6 +11,7 @@ export const diagnosticInputSchema = z.object({
   protocol: z.enum(['openai_chat', 'openai_responses', 'anthropic_messages']),
   targetTool: z.enum(['claude_code', 'codex', 'cursor', 'generic_openai', 'generic_anthropic']),
   authStyle: z.enum(['auto', 'bearer', 'x_api_key', 'anthropic']).default('auto'),
+  mode: z.enum(['quick', 'full']).optional(),
 });
 
 export type DiagnosticInput = z.infer<typeof diagnosticInputSchema>;
@@ -46,6 +50,9 @@ export type DiagnosticResult = {
   protocol: DiagnosticInput['protocol'];
   targetTool: DiagnosticInput['targetTool'];
   checks: DiagnosticCheck[];
+  mode?: DiagnosticMode;
+  score?: number;
+  coverage?: number;
 };
 
 function endpointPath(protocol: DiagnosticInput['protocol']): string {
@@ -101,8 +108,10 @@ function failedCheck(id: DiagnosticCheck['id'], label: string, response: Transpo
 
 export async function runDiagnostic(rawInput: DiagnosticInput, transport: ProbeTransport): Promise<DiagnosticResult> {
   const input = diagnosticInputSchema.parse(rawInput);
+  const mode = input.mode ?? 'quick';
+  const normalizedBaseUrl = normalizeEndpoint(input.baseUrl, input.protocol);
   const common = {
-    baseUrl: input.baseUrl,
+    baseUrl: normalizedBaseUrl,
     path: endpointPath(input.protocol),
     headers: { 'content-type': 'application/json', ...authenticationHeaders(input) },
   };
@@ -111,7 +120,7 @@ export async function runDiagnostic(rawInput: DiagnosticInput, transport: ProbeT
   const connectivity = await transport({ ...common, kind: 'connectivity', body: requestBody(input, 'connectivity') });
   if (connectivity.status < 200 || connectivity.status >= 300) {
     checks.push(failedCheck('connectivity', 'Connectivity and model access', connectivity));
-    return { overall: 'incompatible', testedAt: new Date().toISOString(), protocol: input.protocol, targetTool: input.targetTool, checks };
+    return { overall: 'incompatible', testedAt: new Date().toISOString(), protocol: input.protocol, targetTool: input.targetTool, checks, mode, ...scoreForChecks(checks, mode, input) };
   }
   checks.push({ id: 'connectivity', label: 'Connectivity and model access', outcome: 'pass', message: 'The endpoint accepted the bounded model request.', firstByteMs: connectivity.firstByteMs, totalMs: connectivity.totalMs });
 
@@ -135,5 +144,17 @@ export async function runDiagnostic(rawInput: DiagnosticInput, transport: ProbeT
     protocol: input.protocol,
     targetTool: input.targetTool,
     checks,
+    mode,
+    ...scoreForChecks(checks, mode, input),
   };
+}
+
+function scoreForChecks(checks: DiagnosticCheck[], mode: DiagnosticMode, input: DiagnosticInput) {
+  const plan = createProbePlan({ mode, protocol: input.protocol, targetTool: input.targetTool, model: input.model });
+  const items = plan.map((probe) => {
+    const check = checks.find((candidate) => candidate.id === probe.id);
+    return { weight: probe.weight, applicable: true, outcome: check?.outcome ?? 'skipped' as const };
+  });
+  const score = scoreDiagnostic(items);
+  return { score: score.score, coverage: score.coverage };
 }

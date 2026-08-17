@@ -20,7 +20,7 @@ export function DoctorClient({ locale }: { locale: Locale }) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           baseUrl: form.get('baseUrl'), credential: form.get('credential'), model: form.get('model'),
-          protocol: form.get('protocol'), targetTool: form.get('targetTool'), authStyle: form.get('authStyle'),
+          protocol: form.get('protocol'), targetTool: form.get('targetTool'), authStyle: form.get('authStyle'), mode: form.get('mode'),
         }),
       });
       const payload = await response.json() as { result?: DiagnosticResult; error?: { message?: string } };
@@ -35,7 +35,8 @@ export function DoctorClient({ locale }: { locale: Locale }) {
     <div className="doctor-workbench">
       <form className="doctor-form" onSubmit={submit} autoComplete="off">
         <div className="doctor-form__head"><span>{t.input}</span><b>{t.never}</b></div>
-        <label><span>{t.base}</span><input name="baseUrl" type="url" placeholder="https://api.example.com/v1" required /></label>
+        <label><span>{t.base}</span><input name="baseUrl" type="text" placeholder="api.example.com" required /></label>
+        <label><span>{locale === 'zh' ? '检测模式' : 'Test mode'}</span><select name="mode" defaultValue="quick"><option value="quick">{locale === 'zh' ? '快速检测（3 项）' : 'Quick (3 probes)'}</option><option value="full">{locale === 'zh' ? '完整检测（动态维度）' : 'Full (dynamic probes)'}</option></select></label>
         <div className="doctor-form__pair">
           <label><span>{t.key}</span><input name="credential" type="password" placeholder={t.keyPlaceholder} minLength={8} required autoComplete="new-password" /></label>
           <label><span>{t.model}</span><input name="model" placeholder={t.modelPlaceholder} required /></label>
@@ -54,7 +55,7 @@ export function DoctorClient({ locale }: { locale: Locale }) {
       </form>
 
       <section className="doctor-results" aria-live="polite">
-        <div className="doctor-results__head"><span>{t.output}</span><span>{state.status === 'success' ? state.result.overall.replace('_', ' ').toUpperCase() : t.waiting}</span></div>
+        <div className="doctor-results__head"><span>{t.output}</span><span>{state.status === 'success' ? `${state.result.overall.replace('_', ' ').toUpperCase()} · ${state.result.score ?? 0}/100` : t.waiting}</span></div>
         {state.status === 'idle' && <div className="doctor-results__empty"><span className="scope-mini" /><h2>{t.ready}</h2><p>{t.readyDesc}</p></div>}
         {state.status === 'running' && <div className="doctor-results__empty"><span className="scope-mini scope-mini--running" /><h2>{t.testing}</h2><p>{t.testingDesc}</p></div>}
         {state.status === 'error' && <div className="doctor-results__error"><span>{t.stopped}</span><h2>{state.message}</h2><p>{t.stoppedDesc}</p></div>}

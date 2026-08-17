@@ -42,7 +42,8 @@ export const safeProbeTransport: ProbeTransport = async (request): Promise<Trans
   const family = pinned.includes(':') ? 6 : 4;
   const dispatcher = new Agent({
     connect: {
-      lookup: (_hostname, _options, callback) => callback(null, pinned, family),
+      // undici 7 expects the dns.lookup callback to receive address records.
+      lookup: (_hostname, _options, callback) => callback(null, [{ address: pinned, family }]),
     },
   });
   const controller = new AbortController();

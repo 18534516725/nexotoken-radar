@@ -23,8 +23,19 @@ export function DoctorClient({ locale }: { locale: Locale }) {
           protocol: form.get('protocol'), targetTool: form.get('targetTool'), authStyle: form.get('authStyle'), mode: form.get('mode'),
         }),
       });
-      const payload = await response.json() as { result?: DiagnosticResult; error?: { message?: string } };
-      if (!response.ok || !payload.result) throw new Error(payload.error?.message || t.errorDefault);
+      const payload = await response.json() as { result?: DiagnosticResult; error?: { code?: string; message?: string } };
+      if (!response.ok || !payload.result) {
+        const messages: Record<string, string> = {
+          INVALID_REQUEST: '请检查基础 URL、模型、协议和 API 密钥。',
+          UNSAFE_TARGET: '此基础 URL 不允许进行远程测试，请使用公开 HTTPS 域名。',
+          AUTHENTICATION_FAILED: '身份验证失败，或当前密钥没有该模型的调用权限。',
+          MODEL_UNAVAILABLE: '模型或协议端点不存在，请检查模型名称和协议选择。',
+          RATE_LIMITED: '测试请求过于频繁，请稍后再试。',
+          TEST_TIMEOUT: '供应商在测试时限内没有完成响应，请稍后重试。',
+          PROVIDER_UNAVAILABLE: '端点暂时无法完成请求，请检查 URL、协议和服务状态。',
+        };
+        throw new Error((payload.error?.code && messages[payload.error.code]) || payload.error?.message || t.errorDefault);
+      }
       setState({ status: 'success', result: payload.result });
     } catch (error) {
       setState({ status: 'error', message: error instanceof Error ? error.message : t.errorDefault });

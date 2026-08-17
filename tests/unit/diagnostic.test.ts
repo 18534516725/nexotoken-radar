@@ -47,4 +47,19 @@ describe('private API diagnostic', () => {
     expect(JSON.stringify(result)).not.toContain(input.credential);
     expect(JSON.stringify(result)).not.toContain('internal route detail');
   });
+
+  it('executes the full plan instead of stopping after the three baseline probes', async () => {
+    const transport: ProbeTransport = vi.fn(async (request) => ({
+      status: 200,
+      headers: { 'content-type': request.body.stream ? 'text/event-stream' : 'application/json' },
+      firstByteMs: 10,
+      totalMs: 20,
+      bodyPreview: request.kind === 'tool_call' ? '{"type":"function_call","usage":{}}' : '{"status":"completed","usage":{}}',
+    }));
+    const result = await runDiagnostic({ ...input, mode: 'full' }, transport);
+    expect((transport as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(3);
+    expect(result.checks.map((check) => check.id)).toContain('usage_integrity');
+    expect(result.checks.length).toBeGreaterThan(3);
+    expect(result.coverage).toBeGreaterThan(0);
+  });
 });

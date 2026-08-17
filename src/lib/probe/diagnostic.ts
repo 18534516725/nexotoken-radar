@@ -15,7 +15,7 @@ export const diagnosticInputSchema = z.object({
 });
 
 export type DiagnosticInput = z.infer<typeof diagnosticInputSchema>;
-export type ProbeKind = 'connectivity' | 'streaming' | 'tool_call';
+export type ProbeKind = 'connectivity' | 'streaming' | 'tool_call' | 'error_hygiene' | 'usage_integrity' | 'parameter_honoring' | 'latency_stability' | 'multi_turn' | 'structured_output' | 'event_sequence' | 'reasoning_compatibility' | 'anthropic_events' | 'anthropic_cache' | 'logprobs';
 
 export type TransportRequest = {
   baseUrl: string;
@@ -36,7 +36,7 @@ export type TransportResponse = {
 export type ProbeTransport = (request: TransportRequest) => Promise<TransportResponse>;
 
 export type DiagnosticCheck = {
-  id: 'connectivity' | 'streaming' | 'tool_calling';
+  id: 'connectivity' | 'streaming' | 'tool_calling' | Exclude<import('./plan').ProbeId, 'connectivity' | 'streaming' | 'tool_calling'>;
   label: string;
   outcome: 'pass' | 'warn' | 'fail';
   message: string;
@@ -71,33 +71,39 @@ function authenticationHeaders(input: DiagnosticInput): Record<string, string> {
 }
 
 function requestBody(input: DiagnosticInput, kind: ProbeKind): TransportRequest['body'] {
-  const stream = kind === 'streaming';
+  const stream = kind === 'streaming' || kind === 'event_sequence' || kind === 'anthropic_events';
+  const toolRequested = kind === 'tool_call';
   const tool = { name: 'radar_probe', description: 'Return the supplied value.', parameters: { type: 'object', properties: { value: { type: 'string' } }, required: ['value'] } };
 
   if (input.protocol === 'openai_responses') {
     return {
       model: input.model,
-      input: kind === 'tool_call' ? 'Call radar_probe with value OK.' : 'Reply with OK.',
+      input: toolRequested ? 'Call radar_probe with value OK.' : kind === 'multi_turn' ? [{ role: 'user', content: 'Remember the code RADAR-7.' }, { role: 'user', content: 'Reply with the remembered code.' }] : 'Reply with OK.',
       max_output_tokens: 24,
       stream,
-      ...(kind === 'tool_call' ? { tools: [{ type: 'function', ...tool }], tool_choice: 'required' } : {}),
+      ...(toolRequested ? { tools: [{ type: 'function', ...tool }], tool_choice: 'required' } : {}),
+      ...(kind === 'structured_output' ? { text: { format: { type: 'json_schema', name: 'radar_result', strict: true, schema: { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'], additionalProperties: false } } } } : {}),
+      ...(kind === 'reasoning_compatibility' ? { reasoning: { effort: 'low' } } : {}),
     };
   }
   if (input.protocol === 'anthropic_messages') {
     return {
       model: input.model,
-      messages: [{ role: 'user', content: kind === 'tool_call' ? 'Use radar_probe with value OK.' : 'Reply with OK.' }],
+      messages: [{ role: 'user', content: toolRequested ? 'Use radar_probe with value OK.' : 'Reply with OK.' }],
       max_tokens: 24,
       stream,
-      ...(kind === 'tool_call' ? { tools: [{ ...tool, input_schema: tool.parameters }], tool_choice: { type: 'any' } } : {}),
+      ...(toolRequested ? { tools: [{ ...tool, input_schema: tool.parameters }], tool_choice: { type: 'any' } } : {}),
+      ...(kind === 'anthropic_cache' ? { cache_control: { type: 'ephemeral' } } : {}),
     };
   }
   return {
     model: input.model,
-    messages: [{ role: 'user', content: kind === 'tool_call' ? 'Call radar_probe with value OK.' : 'Reply with OK.' }],
+    messages: [{ role: 'user', content: toolRequested ? 'Call radar_probe with value OK.' : 'Reply with OK.' }],
     max_tokens: 24,
     stream,
-    ...(kind === 'tool_call' ? { tools: [{ type: 'function', function: tool }], tool_choice: 'required' } : {}),
+    ...(toolRequested ? { tools: [{ type: 'function', function: tool }], tool_choice: 'required' } : {}),
+    ...(kind === 'structured_output' ? { response_format: { type: 'json_schema', json_schema: { name: 'radar_result', strict: true, schema: { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'], additionalProperties: false } } } } : {}),
+    ...(kind === 'logprobs' ? { logprobs: true, top_logprobs: 2, temperature: 0 } : {}),
   };
 }
 
@@ -135,6 +141,23 @@ export async function runDiagnostic(rawInput: DiagnosticInput, transport: ProbeT
   checks.push(toolCall.status >= 200 && toolCall.status < 300 && toolObserved
     ? { id: 'tool_calling', label: 'Tool calling', outcome: 'pass', message: 'The response contained a structured tool call.', firstByteMs: toolCall.firstByteMs, totalMs: toolCall.totalMs }
     : { ...failedCheck('tool_calling', 'Tool calling', toolCall), outcome: toolCall.status >= 200 && toolCall.status < 300 ? 'warn' : 'fail', message: toolCall.status >= 200 && toolCall.status < 300 ? 'The request succeeded but no structured tool call was observed.' : failedCheck('tool_calling', 'Tool calling', toolCall).message });
+
+  if (mode === 'full') {
+    const plan = createProbePlan({ mode, protocol: input.protocol, targetTool: input.targetTool, model: input.model });
+    for (const probe of plan.slice(3)) {
+      const attempts = probe.id === 'latency_stability' ? 3 : probe.requests;
+      const responses = await Promise.all(Array.from({ length: attempts }, () => transport({ ...common, kind: probe.id as ProbeKind, body: requestBody(input, probe.id as ProbeKind) })));
+      const response = responses[responses.length - 1]!;
+      const success = responses.every((item) => item.status >= 200 && item.status < 300);
+      const body = responses.map((item) => item.bodyPreview).join('\n');
+      const evidence = probe.id === 'usage_integrity' ? /usage/i.test(body)
+        : probe.id === 'tool_calling' ? /tool_calls|tool_use|function_call/i.test(body)
+        : probe.id === 'event_sequence' || probe.id === 'anthropic_events' ? /response\.|message_|content_block_/i.test(body)
+        : probe.id === 'error_hygiene' ? !/Bearer\s|api[_-]?key|stack trace/i.test(body)
+        : success;
+      checks.push({ id: probe.id, label: probe.id.replace(/_/g, ' '), outcome: success && evidence ? 'pass' : success ? 'warn' : 'fail', message: success && evidence ? 'The probe completed with the expected protocol signal.' : success ? 'The request completed but the expected signal was not observed.' : publicProbeError({ status: response.status }).message, firstByteMs: response.firstByteMs, totalMs: response.totalMs });
+    }
+  }
 
   const failures = checks.filter((check) => check.outcome === 'fail').length;
   const warnings = checks.filter((check) => check.outcome === 'warn').length;

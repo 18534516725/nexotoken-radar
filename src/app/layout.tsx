@@ -4,6 +4,7 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { PRODUCT } from '@/lib/product';
 import './globals.css';
+import { getLocale } from '@/lib/i18n';
 
 const sans = Sora({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const serif = Newsreader({ subsets: ['latin'], variable: '--font-serif', display: 'swap' });
@@ -24,16 +25,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
   const organization = { '@context': 'https://schema.org', '@type': 'Organization', name: 'NexoToken', url: 'https://www.nexotoken.net', subOrganization: { '@type': 'Organization', name: PRODUCT.name, url: PRODUCT.origin } };
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
+    <html lang={locale === 'zh' ? 'zh-CN' : 'en'} className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
       <body>
-        <a className="skip-link" href="#main">Skip to content</a>
-        <SiteHeader />
+        <a className="skip-link" href="#main">{locale === 'zh' ? '跳到主要内容' : 'Skip to content'}</a>
+        <SiteHeader locale={locale} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }} />
         <div id="main">{children}</div>
-        <SiteFooter />
+        <SiteFooter locale={locale} />
       </body>
     </html>
   );

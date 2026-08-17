@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { BrandMark } from './BrandMark';
+import { LanguageToggle } from './LanguageToggle';
+import { copy, type Locale } from '@/lib/i18n';
 
 const NAV_ITEMS = [
   ['Providers', '/providers'],
@@ -9,7 +11,8 @@ const NAV_ITEMS = [
   ['Methodology', '/methodology'],
 ] as const;
 
-export function SiteHeader() {
+export function SiteHeader({ locale }: { locale: Locale }) {
+  const t = copy[locale];
   return (
     <header className="site-header">
       <div className="shell site-header__inner">
@@ -19,13 +22,14 @@ export function SiteHeader() {
           <span className="brand__product">RADAR</span>
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
-          {NAV_ITEMS.map(([label, href]) => (
-            <Link key={href} href={href}>{label}</Link>
+          {NAV_ITEMS.map(([, href], index) => (
+            <Link key={href} href={href}>{t.nav[index]}</Link>
           ))}
         </nav>
         <div className="site-header__actions">
-          <Link className="text-link" href="/submit">Submit</Link>
-          <Link className="button button--compact" href="/doctor">Test my API</Link>
+          <Link className="text-link" href="/submit">{t.submit}</Link>
+          <LanguageToggle locale={locale} label={t.switchLabel} />
+          <Link className="button button--compact" href="/doctor">{t.test}</Link>
         </div>
       </div>
     </header>

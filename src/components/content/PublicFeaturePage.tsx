@@ -17,8 +17,8 @@ export function PublicFeaturePage({ route }: { route: PublicRoute }) {
         ))}
       </div>
       <section className="data-empty">
-        <div><p className="eyebrow">VERIFIED DATA ONLY</p><h2>Evidence is being connected.</h2></div>
-        <p>This surface will not publish fabricated rankings. Records appear after their source, observation window and methodology are available.</p>
+        <div><p className="eyebrow">仅展示已验证数据</p><h2>证据正在接入。</h2></div>
+        <p>本页面不会发布虚构榜单。只有来源、观测窗口和方法论齐备后，记录才会出现。</p>
       </section>
     </article>
   );

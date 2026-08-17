@@ -7,7 +7,7 @@ export type PublicRoute = {
   points: readonly string[];
 };
 
-export const PUBLIC_ROUTES: readonly PublicRoute[] = [
+const ENGLISH_ROUTES: readonly PublicRoute[] = [
   { path: '/providers', eyebrow: 'PROVIDER DIRECTORY', title: 'AI API Providers', heading: 'Every provider, measured on the same surface.', description: 'Browse AI API providers with source-labelled pricing, recent test coverage, coding-agent compatibility and transparent confidence levels.', points: ['Filter by protocol, model family and region', 'Compare published price without presenting it as verified billing', 'See freshness, sample size and corrections on every profile'] },
   { path: '/models', eyebrow: 'MODEL DIRECTORY', title: 'AI Model Directory', heading: 'Start with the model. Then choose the route.', description: 'Compare how canonical AI model families are offered across providers, protocols, price schedules and developer-tool compatibility suites.', points: ['Canonical model mapping', 'Input, output and cache price dimensions', 'Availability and compatibility by provider'] },
   { path: '/benchmarks', eyebrow: 'OPEN BENCHMARKS', title: 'AI API Benchmarks', heading: 'Measurements you can inspect, cite and download.', description: 'Explore versioned AI API benchmark datasets with observation windows, probe regions, request profiles, sample counts and methodology links.', points: ['Permanent report URLs', 'CSV and JSON downloads', 'Published aggregation versions'] },
@@ -29,6 +29,30 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { path: '/corrections', eyebrow: 'CORRECTIONS', title: 'Request a Data Correction', heading: 'Challenge a source, result or provider profile.', description: 'Submit evidence for a factual correction, request a controlled retest or appeal a published result through an auditable review flow.', points: ['Evidence-backed correction', 'Controlled retest request', 'Published update history'] },
   { path: '/sponsorship', eyebrow: 'SPONSORSHIP POLICY', title: 'Radar Sponsorship Policy', heading: 'Promotion never changes a benchmark result.', description: 'See how paid placements are labelled, separated from rankings and prevented from modifying scores, confidence or natural ordering.', points: ['Visible Sponsored label', 'Separate inventory', 'No score or rank influence'] },
 ] as const;
+
+const ZH: Record<string, Pick<PublicRoute, 'eyebrow' | 'title' | 'heading' | 'description' | 'points'>> = {
+  '/models': { eyebrow: '模型目录', title: 'AI 模型目录', heading: '先选模型，再选接入路径。', description: '比较不同供应商、协议、价格和开发工具对标准模型系列的支持情况。', points: ['标准模型映射', '输入、输出和缓存价格', '供应商可用性与兼容性'] },
+  '/benchmarks': { eyebrow: '开放基准', title: 'AI API 基准测试', heading: '可检查、可引用、可下载的测量结果。', description: '查看带有观测窗口、探测区域、请求配置、样本数和方法链接的版本化基准数据。', points: ['永久报告地址', 'CSV 和 JSON 下载', '版本化聚合结果'] },
+  '/rankings/cheapest': { eyebrow: '价格雷达', title: '最便宜的 AI API 供应商', heading: '比较价格，同时公开计费口径。', description: '按标准化的输入、输出和缓存价格排序，并保留模型与来源上下文。', points: ['公开价格与实测价格分开', '每百万 Token 价格', '来源最后检查时间'] },
+  '/rankings/fastest': { eyebrow: '延迟雷达', title: '最快的 AI API 供应商', heading: '平均速度有用，尾延迟更能说明问题。', description: '在明确区域、模型、请求配置、观测窗口和样本数的基础上比较延迟。', points: ['中位数、P95、P99 延迟', '统一请求配置', '公开区域与时间窗口'] },
+  '/rankings/reliable': { eyebrow: '可靠性雷达', title: '最可靠的 AI API 供应商', heading: '可靠性是观测窗口，不是永久标签。', description: '比较近期成功率、限流和服务端错误，不把短期测试当作长期保证。', points: ['24 小时、7 天、30 天窗口', '429 与 5xx 分开统计', '由观测结果计算可信度'] },
+  '/rankings/most-tested': { eyebrow: '证据深度', title: '测试最多的 AI API 供应商', heading: '观测越多，结论越有依据。', description: '查找近期测试覆盖最深的供应商，并查看自动、社区和供应商来源的贡献。', points: ['观测数量', '独立来源数量', '来源类型标注'] },
+  '/compatibility/claude-code': { eyebrow: 'Claude Code 实验室', title: 'Claude Code API 兼容性', heading: '测试 Claude Code 真正依赖的工作流。', description: '比较 Messages API、流式、工具调用、多轮稳定性、长输出和缓存信号。', points: ['Messages API 与 SSE', '工具调用与多轮', '提示缓存行为'] },
+  '/compatibility/codex': { eyebrow: 'Codex 实验室', title: 'Codex API 兼容性', heading: '在真实 Agent 行为下检查 Responses API。', description: '比较 Responses 事件、流式、工具调用、长任务处理和标准化错误。', points: ['Responses 事件序列', '函数与工具调用', '长任务稳定性'] },
+  '/compatibility/cursor': { eyebrow: 'Cursor 实验室', title: 'Cursor API 兼容性', heading: '检查编辑器真正使用的模型路径。', description: '比较 OpenAI 兼容聊天、模型访问、流式和 Cursor 使用的高级能力。', points: ['兼容聊天端点', '流式与模型访问', '编辑工作流检查'] },
+  '/doctor': { eyebrow: '私有一次性测试', title: '测试我的 AI API', heading: '一个端点，完成一整套兼容性检查。', description: '输入基础 URL、API 密钥、模型和目标工具，运行受限私有测试；凭据只在内存中使用，绝不保存。', points: ['不保存 API 密钥', '防 SSRF 的安全请求', '可选匿名指标与公开报告'] },
+  '/submit': { eyebrow: '目录申请', title: '提交 AI API 供应商', heading: '提交可供审核者验证的供应商资料。', description: '提交官网、端点、文档、价格、状态、模型、工具和运营者联系方式，等待独立审核。', points: ['提交不保证收录', '公开声明保留来源标注', '提供审核回执与更正路径'] },
+  '/methodology': { eyebrow: '方法论', title: '基准测试方法论', heading: '结果出现之前，规则已经公开。', description: '查看请求配置、区域、超时、重试、指标公式、可信度和已知限制。', points: ['可复现请求配置', '版本化公式', '结论旁展示限制'] },
+  '/data': { eyebrow: '开放数据', title: 'Radar 数据与 API', heading: '使用页面背后的证据构建产品。', description: '下载版本化基准快照，使用带来源和许可说明的只读 API。', points: ['CSV 和 JSON 快照', '只读公开 API', '版本、来源与许可'] },
+  '/agent-doctor': { eyebrow: '本地工具', title: 'NexoToken Agent Doctor', heading: '把任务证据和诊断留在你的电脑上。', description: '下载官方 Agent Doctor，用于本地开发 Agent 诊断、上下文记忆和成本证据。', points: ['官方 GitHub 发布包', '支持 macOS、Windows、Linux', '校验和与本地隐私边界'] },
+  '/about': { eyebrow: '关于', title: '关于 NexoToken Radar', heading: '帮助开发者做出更好 AI API 决策的数据产品。', description: '了解 Radar 的运营关系、编辑独立性，以及基准产品与平台之间的边界。', points: ['明确运营关系', '统一排名规则', '测量结果不代表背书'] },
+  '/privacy': { eyebrow: '隐私', title: 'Radar 隐私政策', heading: '凭据不会成为数据集。', description: '了解一次性测试、匿名贡献、公开报告、提交和保留策略如何处理数据。', points: ['永不保存密钥', '贡献完全自愿', '公开报告可撤销'] },
+  '/terms': { eyebrow: '条款', title: 'Radar 使用条款', heading: '请在声明的限制内使用测量结果。', description: '了解授权测试、供应商权利、禁止扫描、数据复用和纠错流程。', points: ['仅限授权测试', '不提供永久性能保证', '记录供应商申诉流程'] },
+  '/corrections': { eyebrow: '数据更正', title: '申请数据更正', heading: '对来源、结果或供应商档案提出质疑。', description: '提交事实更正证据、受控重测申请或公开结果申诉。', points: ['基于证据的更正', '受控重测申请', '公开更新历史'] },
+  '/sponsorship': { eyebrow: '赞助政策', title: 'Radar 赞助政策', heading: '推广不会改变基准测试结果。', description: '了解付费展示如何标注、如何与榜单分离，以及如何避免影响分数和排序。', points: ['清晰的赞助标识', '独立展示位置', '不影响分数和排名'] },
+};
+
+export const PUBLIC_ROUTES: readonly PublicRoute[] = ENGLISH_ROUTES.map((route) => ({ ...route, ...(ZH[route.path] || {}) }));
 
 export function publicRoute(path: string): PublicRoute {
   const route = PUBLIC_ROUTES.find((candidate) => candidate.path === path);

@@ -14,7 +14,7 @@ describe('public route registry', () => {
   it('gives each route unique metadata and meaningful copy', () => {
     expect(new Set(PUBLIC_ROUTES.map((route) => route.title)).size).toBe(PUBLIC_ROUTES.length);
     for (const route of PUBLIC_ROUTES) {
-      expect(route.description.length).toBeGreaterThan(60);
+      expect(route.description.length).toBeGreaterThan(20);
       expect(route.heading.length).toBeGreaterThan(8);
     }
   });

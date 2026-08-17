@@ -29,8 +29,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
         <div>
           <p className="site-footer__label">NexoToken</p>
-          <a href={PRODUCT.mainPlatformUrl}>AI API Platform ↗</a>
-          <a href={PRODUCT.doctorRepositoryUrl}>GitHub ↗</a>
+          <a href={PRODUCT.mainPlatformUrl}>AI API 平台 ↗</a>
+          <a href={PRODUCT.doctorRepositoryUrl}>GitHub 仓库 ↗</a>
           <Link href="/about">{t.about}</Link>
         </div>
       </div>

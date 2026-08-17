@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { BrandMark } from './BrandMark';
-import { LanguageToggle } from './LanguageToggle';
 import { copy, type Locale } from '@/lib/i18n';
 
 const NAV_ITEMS = [
@@ -28,7 +27,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         </nav>
         <div className="site-header__actions">
           <Link className="text-link" href="/submit">{t.submit}</Link>
-          <LanguageToggle locale={locale} label={t.switchLabel} />
           <Link className="button button--compact" href="/doctor">{t.test}</Link>
         </div>
       </div>

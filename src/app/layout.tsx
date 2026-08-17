@@ -25,12 +25,14 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const organization = { '@context': 'https://schema.org', '@type': 'Organization', name: 'NexoToken', url: 'https://www.nexotoken.net', subOrganization: { '@type': 'Organization', name: PRODUCT.name, url: PRODUCT.origin } };
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
         <SiteHeader />
-        <main id="main">{children}</main>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }} />
+        <div id="main">{children}</div>
         <SiteFooter />
       </body>
     </html>

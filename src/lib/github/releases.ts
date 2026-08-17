@@ -1,0 +1,1 @@
+export const AGENT_DOCTOR = { repository: 'https://github.com/18534516725/Agent-Doctor', latestRelease: 'https://github.com/18534516725/Agent-Doctor/releases/latest', issues: 'https://github.com/18534516725/Agent-Doctor/issues' } as const;
